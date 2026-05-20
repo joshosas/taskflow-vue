@@ -143,6 +143,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // Clears local state only — used by the 401 interceptor when the
+  // Laravel session has already expired so there's nothing to log out of
+  function clearLocalUser() {
+    clearUser() // wipes user.value + localStorage
+  }
+
   return {
     // State
     user,
