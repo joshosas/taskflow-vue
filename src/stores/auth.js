@@ -11,6 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(JSON.parse(localStorage.getItem('tf_user') ?? 'null'))
   const loading = ref(false)
   const errors = ref({}) // holds 422 field errors { email: ['...'] }
+  const initialised = ref(false)
 
   // ── Getters ────────────────────────────────────────────
   const isAuthenticated = computed(() => !!user.value)
@@ -35,11 +36,26 @@ export const useAuthStore = defineStore('auth', () => {
   // it into errors.value so components can read errors.email,
   // errors.name etc. directly
   function handleValidationError(err) {
-    if (err.response?.status === 422) {
+    const status = err.response?.status
+
+    if (status === 422) {
+      // Laravel validation failure — map field errors to the form
       errors.value = err.response.data.errors ?? {}
+    } else if (status === 419) {
+      // CSRF token mismatch — happens when the cookie wasn't sent correctly
+      // Show a general message rather than crashing silently
+      errors.value = {
+        general: ['Session expired or CSRF error. Please refresh and try again.'],
+      }
+    } else if (status === 401) {
+      errors.value = {
+        general: ['You are not authenticated. Please log in.'],
+      }
     } else {
-      // Non-validation error — rethrow so the component can handle it
-      throw err
+      // Unknown error — still don't crash, just show something
+      errors.value = {
+        general: ['Something went wrong. Please try again.'],
+      }
     }
   }
 
@@ -111,14 +127,19 @@ export const useAuthStore = defineStore('auth', () => {
   // after a long time away), this clears the stale localStorage
   // entry so the user is sent to login rather than hitting 401s
   async function fetchUser() {
-    if (!user.value) return
+    if (!user.value) {
+      initialised.value = true
+      return
+    }
 
     try {
       const { data } = await api.get('/api/user')
       setUser(data.user)
     } catch {
-      // Session expired or invalid — clear everything
       clearUser()
+    } finally {
+      // Mark as ready regardless of outcome — the guard can now proceed
+      initialised.value = true
     }
   }
 
@@ -128,6 +149,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     errors,
     // Getters
+    initialised,
     isAuthenticated,
     // Actions
     register,

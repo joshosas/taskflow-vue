@@ -8,7 +8,7 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('@/views/LoginView.vue'),
-      meta: { guestOnly: true }, // redirect away if already logged in
+      meta: { guestOnly: true },
     },
     {
       path: '/register',
@@ -20,14 +20,19 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: () => import('@/views/HomeView.vue'),
-      meta: { requiresAuth: true }, // redirect to login if not logged in
+      meta: { requiresAuth: true },
     },
   ],
 })
 
-// Navigation guard — runs before every route change
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  // Wait for the session check to complete before making any
+  // redirect decisions — prevents the flash-to-login on refresh
+  if (!auth.initialised) {
+    await auth.fetchUser()
+  }
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return { name: 'login' }
