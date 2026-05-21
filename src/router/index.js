@@ -22,14 +22,18 @@ const router = createRouter({
       component: () => import('@/views/HomeView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/projects/:id',
+      name: 'project',
+      component: () => import('@/views/ProjectView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
 
-  // Wait for the session check to complete before making any
-  // redirect decisions — prevents the flash-to-login on refresh
   if (!auth.initialised) {
     await auth.fetchUser()
   }
