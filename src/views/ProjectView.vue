@@ -6,12 +6,12 @@ import { useTaskStore } from '@/stores/tasks'
 import AppLayout from '@/components/AppLayout.vue'
 import SidebarProjects from '@/components/SidebarProjects.vue'
 import ProjectModal from '@/components/ProjectModal.vue'
+import TaskList from '@/components/TaskList.vue'
 
 const route = useRoute()
 const router = useRouter()
 const store = useProjectStore()
 const tasks = useTaskStore()
-
 const project = computed(() => store.find(route.params.id))
 
 const editModalOpen = ref(false)
@@ -87,7 +87,7 @@ function onProjectUpdated() {
 
       <!-- Progress bar -->
       <div
-        v-if="project && !tasks.loading"
+        v-if="project"
         class="flex items-center gap-3 border-b border-slate-100 bg-white px-6 py-2.5"
       >
         <div class="flex-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
@@ -103,81 +103,7 @@ function onProjectUpdated() {
 
       <!-- Tasks area -->
       <div class="flex-1 overflow-y-auto px-6 py-5">
-        <!-- Loading skeleton -->
-        <div v-if="tasks.loading" class="flex flex-col gap-2 animate-pulse">
-          <div
-            v-for="i in 4"
-            :key="i"
-            class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3"
-          >
-            <div class="w-5 h-5 rounded-full bg-slate-200 shrink-0"></div>
-            <div
-              class="h-3 rounded-full bg-slate-200"
-              :style="{ width: ['55%', '75%', '40%', '65%'][i - 1] }"
-            ></div>
-            <div class="ml-auto w-12 h-4 rounded-full bg-slate-100"></div>
-          </div>
-        </div>
-
-        <!-- Empty state -->
-        <div v-else-if="tasks.tasks.length === 0" class="flex h-full items-center justify-center">
-          <div class="text-center">
-            <p class="font-medium text-slate-500">No tasks yet</p>
-            <p class="mt-1 text-sm text-slate-400">Add your first task below.</p>
-          </div>
-        </div>
-
-        <!-- Task list -->
-        <ul v-else class="flex flex-col gap-2">
-          <li
-            v-for="task in tasks.tasks"
-            :key="task.id"
-            class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"
-            :class="task.completed ? 'opacity-60' : ''"
-          >
-            <!-- Completion toggle -->
-            <button
-              @click="tasks.toggleComplete(project.id, task)"
-              class="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center transition"
-              :class="
-                task.completed
-                  ? 'bg-blue-600 border-blue-600'
-                  : 'border-slate-300 hover:border-blue-400'
-              "
-            >
-              <svg
-                v-if="task.completed"
-                class="w-3 h-3 text-white"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-                viewBox="0 0 24 24"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-              </svg>
-            </button>
-
-            <span
-              :class="
-                task.completed ? 'line-through text-slate-400 flex-1' : 'text-slate-700 flex-1'
-              "
-            >
-              {{ task.title }}
-            </span>
-
-            <!-- Priority badge -->
-            <span
-              class="text-xs px-2 py-0.5 rounded-full font-medium shrink-0"
-              :class="{
-                'bg-red-50 text-red-600': task.priority === 'high',
-                'bg-amber-50 text-amber-600': task.priority === 'medium',
-                'bg-slate-100 text-slate-500': task.priority === 'low',
-              }"
-            >
-              {{ task.priority }}
-            </span>
-          </li>
-        </ul>
+        <TaskList v-if="project" :project-id="project.id" />
       </div>
     </div>
 
